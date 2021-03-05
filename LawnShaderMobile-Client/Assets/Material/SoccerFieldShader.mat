@@ -1,0 +1,60 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!21 &2100000
+Material:
+  serializedVersion: 6
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: SoccerFieldShader
+  m_Shader: {fileID: 4800000, guid: 9a34e56a5faa7452aa4efccdfd3fe7c1, type: 3}
+  m_ShaderKeywords: HEIGHTGRASS
+  m_LightmapFlags: 4
+  m_EnableInstancingVariants: 0
+  m_DoubleSidedGI: 0
+  m_CustomRenderQueue: -1
+  stringTagMap: {}
+  disabledShaderPasses: []
+  m_SavedProperties:
+    serializedVersion: 3
+    m_TexEnvs:
+    - _FieldTexture:
+        m_Texture: {fileID: 2800000, guid: 7de2d5ab3800abb48afa0ae46040e709, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _GrassTex:
+        m_Texture: {fileID: 2800000, guid: 38984335a1fcca84e8513c418ab94c79, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _MainTex:
+        m_Texture: {fileID: 2800000, guid: b5511da909ee44444bdf2688cee2a3df, type: 3}
+        m_Scale: {x: 0.009, y: 0.01}
+        m_Offset: {x: 0.5, y: 0.5}
+    - _Noise:
+        m_Texture: {fileID: 2800000, guid: 38984335a1fcca84e8513c418ab94c79, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    m_Floats:
+    - _CompileFlag_EnableAwakenEffect: 1
+    - _CompileLocal_HeightGrass: 0
+    - _Distance: 0.1
+    - _FogEnd: 0
+    - _FogStart: 10
+    - _FogStepA: 0.129
+    - _FogStepB: 1
+    - _Height: 0.01
+    - _LawnScale: 0.01
+    - _MainIntensity: 1
+    - _WindForce: 0.009
+    - _WindSpeed: 1.11
+    m_Colors:
+    - _ColorDown: {r: 0, g: 0, b: 0, a: 0}
+    - _ColorGround: {r: 0.6037736, g: 0.6037736, b: 0.6037736, a: 0}
+    - _ColorLine: {r: 0.20122628, g: 0.5188679, b: 0.031817384, a: 1}
+    - _ColorMiddle: {r: 0.0522798, g: 0.5377358, b: 0, a: 0}
+    - _ColorTop: {r: 0.4162438, g: 1, b: 0, a: 1}
+    - _ColorUp: {r: 0.09805238, g: 1, b: 0, a: 1}
+    - _FieldColor: {r: 1, g: 1, b: 1, a: 1}
+    - _FogEnd: {r: 0.32679394, g: 0.46226418, b: 0.28128338, a: 1}
+    - _FogStart: {r: 1, g: 0.8674296, b: 0, a: 0}
