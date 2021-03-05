@@ -53,7 +53,7 @@ public class LawArea : MonoBehaviour
 
     public enum DRAWTYPE
     {
-        cascade, fadeIn
+        cascade, fadeIn, cascadeAndFade
     }
     
     private struct AreaInfo
@@ -122,6 +122,10 @@ public class LawArea : MonoBehaviour
                             case DRAWTYPE.fadeIn:
                                 _areaInfos[i].position.y = -Mathf.Lerp(-0.2f, 1.2f * (lawnHeight/2f), Mathf.SmoothStep(0.2f,1f, normalizeDistance));
                                 _areaInfos[i].cascadeValue = 1;
+                                break;
+                            case DRAWTYPE.cascadeAndFade:
+                                _areaInfos[i].position.y = -Mathf.Lerp(-0.2f, 1.2f * (lawnHeight/2f), Mathf.SmoothStep(0.2f,1f, normalizeDistance));
+                                _areaInfos[i].cascadeValue = SelectCascadeMesh(normalizeDistance);
                                 break;
                     }
     

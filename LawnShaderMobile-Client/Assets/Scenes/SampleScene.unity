@@ -198,13 +198,13 @@ Transform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 963194225}
-  m_LocalRotation: {x: -0.041374374, y: 0.95528543, z: -0.18147297, w: -0.22975089}
-  m_LocalPosition: {x: -2.111, y: 1.63, z: 10.406}
+  m_LocalRotation: {x: -0.046433028, y: 0.9683613, z: -0.12489232, w: -0.21100305}
+  m_LocalPosition: {x: -8.64, y: 1.09, z: 3.68}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 0}
   m_RootOrder: 0
-  m_LocalEulerAnglesHint: {x: 21.452002, y: 207.097, z: 0.26700002}
+  m_LocalEulerAnglesHint: {x: 15.158001, y: 204.29099, z: -2.21}
 --- !u!114 &963194229
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -273,19 +273,19 @@ MonoBehaviour:
   material: {fileID: 2100000, guid: 586afe60f5f6a46fdad6664950322303, type: 2}
   lawnWidth: 110
   lawnDepth: 90
-  widthDivision: 40
-  depthDivition: 40
-  viewDistance: 15
+  widthDivision: 52
+  depthDivition: 58
+  viewDistance: 9
   minAngle: 0.35
   maxAngle: 1
-  lawnAmount: 2575
-  lawnHeight: 1
-  lawnRandomHeight: 0.95
-  lawnScale: 0.7
+  lawnAmount: 2348
+  lawnHeight: 0.25
+  lawnRandomHeight: 1
+  lawnScale: 0.6
   lawnIntensity: 1
   lawnTexture: {fileID: 2800000, guid: b5511da909ee44444bdf2688cee2a3df, type: 3}
-  lawnColorGround: {r: 0.6037736, g: 0.6037736, b: 0.6037736, a: 0}
-  drawType: 1
+  lawnColorGround: {r: 0.254717, g: 0.254717, b: 0.254717, a: 0}
+  drawType: 2
 --- !u!4 &1092775942
 Transform:
   m_ObjectHideFlags: 0
