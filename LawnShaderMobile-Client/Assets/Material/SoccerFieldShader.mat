@@ -50,7 +50,7 @@ Material:
     - _WindSpeed: 1.11
     m_Colors:
     - _ColorDown: {r: 0, g: 0, b: 0, a: 0}
-    - _ColorGround: {r: 0.254717, g: 0.254717, b: 0.254717, a: 0}
+    - _ColorGround: {r: 0.7830189, g: 0.7830189, b: 0.7830189, a: 0}
     - _ColorLine: {r: 0.20122628, g: 0.5188679, b: 0.031817384, a: 1}
     - _ColorMiddle: {r: 0.0522798, g: 0.5377358, b: 0, a: 0}
     - _ColorTop: {r: 0.4162438, g: 1, b: 0, a: 1}

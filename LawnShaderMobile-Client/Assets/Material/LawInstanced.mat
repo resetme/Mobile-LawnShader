@@ -89,7 +89,7 @@ Material:
     - _Color: {r: 0.112679005, g: 1, b: 0, a: 1}
     - _ColorDown: {r: 0, g: 0, b: 0, a: 0}
     - _ColorFar: {r: 0.0627451, g: 0.34117648, b: 0, a: 1}
-    - _ColorGround: {r: 0.254717, g: 0.254717, b: 0.254717, a: 0}
+    - _ColorGround: {r: 0.7830189, g: 0.7830189, b: 0.7830189, a: 0}
     - _ColorLine: {r: 0.2, g: 0.5176471, b: 0.03137255, a: 1}
     - _ColorUp: {r: 1, g: 0.9504018, b: 0, a: 0.78039217}
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
