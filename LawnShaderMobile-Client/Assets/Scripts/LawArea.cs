@@ -1,8 +1,9 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Rendering;
-
+using Random = UnityEngine.Random;
 #if UNITY_EDITOR
 using UnityEditor;
 #endif
@@ -31,6 +32,14 @@ public class LawArea : MonoBehaviour
     public float minAngle = 0;
     [Range(-1f,1f)]
     public float maxAngle = 0;
+
+    [Header("Lawn Cascade Properties")] 
+    [Range(0, 1)]
+    public float _cascade1multiplier = 1;
+    [Range(0, 1)]
+    public float _cascade2multiplier = 1;
+    [Range(0, 1)]
+    public float _cascade3multiplier = 1;
     
     [Header("Lawn Properties")]
     [Range(0,5000)]
@@ -214,27 +223,34 @@ public class LawArea : MonoBehaviour
             _initialize = false;
             return;
         }
+        
         _initialize = true;
         
-        field.transform.localScale = new Vector3(lawnWidth, lawnDepth, 0);
-        _fieldMaterial = field.GetComponent<MeshRenderer>().sharedMaterial;
-
         _cascadeMeshList = new MeshList[_cascadeMesh.Length];
+        
         for (int i = 0; i < _cascadeMeshList.Length; i++)
         {
             _cascadeMeshList[i].positionList = new List<Matrix4x4>();
         }
         
+        field.transform.localScale = new Vector3(lawnWidth, lawnDepth, 0);
+        _fieldMaterial = field.GetComponent<MeshRenderer>().sharedMaterial;
+
         _lawnLayer = LayerMask.NameToLayer("Lawn");
         _block = new MaterialPropertyBlock();
+        
+        CreateAreaArrayInfo();
 
         _cascadeMesh[0] = CreateLawnArea(lawnAmount);
+        _cascadeMesh[1] = CreateLawnAreaLod(_cascadeMesh[0], _cascade1multiplier, 1);
+        _cascadeMesh[2] = CreateLawnAreaLod(_cascadeMesh[0], _cascade2multiplier, 1);
+        _cascadeMesh[3] = CreateLawnAreaLod(_cascadeMesh[0], _cascade3multiplier, 1);
         
-
+        /*
         for (int i = 1; i < _cascadeMesh.Length; i++)
         {
             //Amount
-            float multiplier = (i) /(float)_cascadeMesh.Length;
+            float multiplier = (i) /(float)(_cascadeMesh.Length);
             multiplier = 1 - multiplier;
             
             //height
@@ -243,6 +259,8 @@ public class LawArea : MonoBehaviour
             heightMultiplier = 1;
             _cascadeMesh[i] = CreateLawnAreaLod(_cascadeMesh[0], multiplier, heightMultiplier);
         }
+        */
+        
        
         ShaderUpdateProperties();
     }
@@ -266,29 +284,41 @@ public class LawArea : MonoBehaviour
         if (observerPosition == null)
             ready = false;
 
-        if (!ready)
-            return ready;
-        
-        CreateAreaArrayInfo();
-        
-        if (_areaInfos.Length == 0)
-            ready = false;
-
         return ready;
     }
 
     private Mesh CreateLawnAreaLod(Mesh lawMesh, float multiplier, float heightMultiplier)
     {
         Mesh mesh = new Mesh();
-        Mesh baseMesh = lawMesh;
         int reduce = (spawnMesh.vertices.Length * Mathf.FloorToInt(lawnAmount * multiplier));
 
+        Vector3[] vertices = lawMesh.vertices;
+        Array.Resize(ref vertices, reduce);
+        mesh.vertices = vertices;
         
+        int[] triangles = lawMesh.triangles;
+        Array.Resize(ref triangles, (reduce * 3) / 2 );
+        mesh.triangles = triangles;
+
+        Vector2[] uvs = lawMesh.uv;
+        Array.Resize(ref uvs, reduce);
+        mesh.uv = uvs;
+        
+        Vector3[] normals = lawMesh.normals;
+        Array.Resize(ref normals, reduce);
+        mesh.normals = normals;
+        
+        Color[] vertexColor = lawMesh.colors;
+        Array.Resize(ref vertexColor, reduce);
+        mesh.colors = vertexColor;
+        return mesh;
+
+        /*
         //Vertices
         Vector3[] vertices = new Vector3[reduce];
         for (int i = 0; i < vertices.Length; i++)
         {
-            Vector3 vertexPosition = baseMesh.vertices[i];
+            Vector3 vertexPosition = lawMesh.vertices[i];
             vertexPosition.y *= heightMultiplier;
             
             //Set
@@ -303,7 +333,7 @@ public class LawArea : MonoBehaviour
         int[] triangles = new int[(reduce * 3) / 2 ];
         for (int i = 0; i < triangles.Length; i++)
         {
-            triangles[i] = baseMesh.triangles[i];
+            triangles[i] = lawMesh.triangles[i];
         }
 
         mesh.triangles = triangles;
@@ -312,7 +342,7 @@ public class LawArea : MonoBehaviour
         Vector2[] uvs = new Vector2[reduce];
         for (int i = 0; i < uvs.Length; i++)
         {
-            uvs[i] = baseMesh.uv[i];
+            uvs[i] = lawMesh.uv[i];
         }
 
         mesh.uv = uvs;
@@ -330,12 +360,13 @@ public class LawArea : MonoBehaviour
         Color[] vertexColor = new Color[reduce];
         for (int i = 0; i < vertexColor.Length; i++)
         {
-            vertexColor[i] = baseMesh.colors[i];
+            vertexColor[i] = lawMesh.colors[i];
         }
 
         mesh.colors = vertexColor;
         
         return mesh;
+        */
     }
     
     private Mesh CreateLawnArea(int totalAmount)
