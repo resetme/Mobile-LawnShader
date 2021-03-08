@@ -63,7 +63,7 @@
                 //Blend Far
                 half farBlend = smoothstep(0, 0.6, clamp(0,1, i.worldPos.y * 4));
                 
-                //Main Texture
+                //Main Texture // Optimize THIS
                 half3 main = tex2D(_MainTex, half2(i.worldPos.x, i.worldPos.z)  * half2(_MainTex_ST.x, _MainTex_ST.y) + half2(_MainTex_ST.z, _MainTex_ST.w));
                 main *= _MainIntensity;
                 

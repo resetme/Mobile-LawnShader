@@ -5,6 +5,7 @@ using UnityEngine;
 using UnityEngine.Rendering;
 using Random = UnityEngine.Random;
 #if UNITY_EDITOR
+using UnityEngine.Profiling;
 using UnityEditor;
 #endif
 
@@ -15,6 +16,7 @@ public class LawArea : MonoBehaviour
     
     public GameObject field;
     public Transform observerPosition;
+    public float observerOffsetPosition = 0;
     public Mesh spawnMesh;
     public Material material;
 
@@ -109,14 +111,17 @@ public class LawArea : MonoBehaviour
         
         for (int i = 0; i < _areaInfos.Length; i++)
         {
-            float distance = Vector3.Distance(observerPosition.transform.position, _areaInfos[i].position);
+            Vector3 targetObserverPosition = observerPosition.transform.position ;
+            targetObserverPosition += observerPosition.transform.forward * observerOffsetPosition;
+            
+            float distance = Vector3.Distance(targetObserverPosition, _areaInfos[i].position);
             
             if (distance < viewDistance)
             {
-                Vector3 up = (_areaInfos[i].position - observerPosition.transform.position).normalized;
+                Vector3 up = (_areaInfos[i].position - targetObserverPosition).normalized;
                 Vector3 forward = transform.TransformDirection(observerPosition.transform.forward);
                 float dot = Vector3.Dot(forward, up);
-                dot = Mathf.Clamp01(dot);
+                //dot = Mathf.Clamp01(dot);
                 
                 _areaInfos[i].dotValue = dot;
                 
@@ -548,6 +553,11 @@ public class LawArea : MonoBehaviour
     }
     
 #if UNITY_EDITOR
+    float GetMeshMemorySizeMB(Mesh mesh)
+    {
+        return (Profiler.GetRuntimeMemorySizeLong(mesh) / 1024f) / 1024f;
+    }
+    
     private void OnValidate()
     {
         InitialSetup();
@@ -588,8 +598,16 @@ public class LawArea : MonoBehaviour
             posEnd.x = posEnd.x + (lawnWidth / 2f);
             Gizmos.DrawLine(posStart, posEnd);
         }
+        
+        Vector3 targetObserverPosition = observerPosition.transform.position ;
+        targetObserverPosition += observerPosition.transform.forward * observerOffsetPosition;
 
-        Gizmos.DrawRay(observerPosition.transform.position, observerPosition.transform.forward * 10);
+        Gizmos.DrawRay(targetObserverPosition, observerPosition.transform.forward * 10);
+
+        int visibleAmount1 = 0;
+        int visibleAmount2 = 0;
+        int visibleAmount3 = 0;
+        int visibleAmount4 = 0;
         
         //Check Distance and Angle from Observer
         for (int i = 0; i < _areaInfos.Length; i++)
@@ -599,6 +617,21 @@ public class LawArea : MonoBehaviour
                 //Handles.Label(_areaInfos[i].position, _areaInfos[i].dotValue.ToString());
                 Handles.Label(_areaInfos[i].position, _areaInfos[i].cascadeValue.ToString());
                 Gizmos.color = Color.green;
+                switch (_areaInfos[i].cascadeValue)
+                {
+                    case 1:
+                        visibleAmount1++;
+                        break;
+                    case 2:
+                        visibleAmount2++;
+                        break;
+                    case 3:
+                        visibleAmount3++;
+                        break;
+                    case 4:
+                        visibleAmount4++;
+                        break;
+                }
             }
             else
             {
@@ -607,6 +640,17 @@ public class LawArea : MonoBehaviour
             
             Gizmos.DrawWireCube(_areaInfos[i].position, _areaInfos[i].scale);
         }
+
+        float memoryCascade = visibleAmount1 * GetMeshMemorySizeMB(_cascadeMesh[0]);
+        memoryCascade += visibleAmount1 * GetMeshMemorySizeMB(_cascadeMesh[1]);
+        memoryCascade += visibleAmount1 * GetMeshMemorySizeMB(_cascadeMesh[2]);
+        memoryCascade += visibleAmount1 * GetMeshMemorySizeMB(_cascadeMesh[3]);
+
+        Vector3 memoryLabelPosition = observerPosition.transform.position;
+        memoryLabelPosition.y += 2;
+        GUIStyle style = new GUIStyle();
+        style.fontSize = 32;
+        Handles.Label(memoryLabelPosition, memoryCascade.ToString(), style);
     }
     #endif
 }
