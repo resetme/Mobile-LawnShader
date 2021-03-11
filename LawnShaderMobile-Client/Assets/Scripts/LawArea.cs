@@ -27,6 +27,9 @@ public class LawArea : MonoBehaviour
     public int widthDivision = 0;
     public int depthDivition = 0;
 
+    [Range(1,50)]
+    public int subDivision = 4;
+
     [Header("Lawn Cull Properties")]
     [Range(0,100)]
     public float viewDistance = 1;
@@ -46,7 +49,7 @@ public class LawArea : MonoBehaviour
     [Header("Lawn Properties")]
     [Range(0,5000)]
     public int lawnAmount = 100;
-    [Range(0.1f,5f)]
+    [Range(0.01f,5f)]
     public float lawnHeight = 1f;
     [Range(0.1f,1f)]
     public float lawnRandomHeight = 1f;
@@ -78,8 +81,19 @@ public class LawArea : MonoBehaviour
         public bool visible;
         public Matrix4x4 trs;
         public int cascadeValue;
+        public SubAreaInfo[] subAreaInfos;
     }
 
+    private struct SubAreaInfo
+    {
+        public Vector3 position;
+        public Vector3 scale;
+        public float dotValue;
+        public bool visible;
+        public Matrix4x4 trs;
+        public int cascadeValue;
+    }
+    
     private struct MeshList
     { 
         public bool draw;
@@ -109,51 +123,60 @@ public class LawArea : MonoBehaviour
         if (!_initialize)
             return;
         
+        Vector3 targetObserverPosition = observerPosition.transform.position ;
+        targetObserverPosition += observerPosition.transform.forward * observerOffsetPosition;
+        
         for (int i = 0; i < _areaInfos.Length; i++)
         {
-            Vector3 targetObserverPosition = observerPosition.transform.position ;
-            targetObserverPosition += observerPosition.transform.forward * observerOffsetPosition;
-            
             float distance = Vector3.Distance(targetObserverPosition, _areaInfos[i].position);
             
             if (distance < viewDistance)
             {
-                Vector3 up = (_areaInfos[i].position - targetObserverPosition).normalized;
-                Vector3 forward = transform.TransformDirection(observerPosition.transform.forward);
-                float dot = Vector3.Dot(forward, up);
-                //dot = Mathf.Clamp01(dot);
+                _areaInfos[i].visible = true;
                 
-                _areaInfos[i].dotValue = dot;
-                
-                if (dot > minAngle && dot < maxAngle)
+                //SubDivision Check
+                for (int j = 0; j < _areaInfos[i].subAreaInfos.Length; j++)
                 {
-                    float normalizeDistance = distance / viewDistance;
-
-                    _areaInfos[i].visible = true;
-                    
-                    switch (drawType)
+                    distance = Vector3.Distance(targetObserverPosition, _areaInfos[i].subAreaInfos[j].position);
+                    if (distance < viewDistance)
                     {
-                            case DRAWTYPE.cascade:
-                                _areaInfos[i].cascadeValue = SelectCascadeMesh(normalizeDistance);
-                                break;
-                            case DRAWTYPE.fadeIn:
-                                _areaInfos[i].position.y = -Mathf.Lerp(-0.2f, 1.2f * (lawnHeight/2f), Mathf.SmoothStep(0.2f,1f, normalizeDistance));
-                                _areaInfos[i].cascadeValue = 1;
-                                break;
-                            case DRAWTYPE.cascadeAndFade:
-                                _areaInfos[i].cascadeValue = SelectCascadeMesh(normalizeDistance);
-                                float heightMultiplier = Mathf.Max(0.2f, _areaInfos[i].cascadeValue/(float)(_cascadeMesh.Length-1));
-                                _areaInfos[i].position.y = -Mathf.Lerp(-0.2f, (heightMultiplier * lawnHeight)/2f, Mathf.SmoothStep(0.2f,1f, normalizeDistance));
+                        _areaInfos[i].subAreaInfos[j].visible = true;
+                        
+                        Vector3 up = (_areaInfos[i].subAreaInfos[j].position - targetObserverPosition).normalized;
+                        Vector3 forward = transform.TransformDirection(observerPosition.transform.forward);
+                        float dot = Vector3.Dot(forward, up);
+                        //dot = Mathf.Clamp01(dot);
+                    
+                        _areaInfos[i].subAreaInfos[j].dotValue = dot;
+                    
+                        if (dot > minAngle && dot < maxAngle)
+                        {
+                            float normalizeDistance = distance / viewDistance;
+                    
+                            switch (drawType)
+                            {
+                                case DRAWTYPE.cascade:
+                                    _areaInfos[i].subAreaInfos[j].cascadeValue = SelectCascadeMesh(normalizeDistance);
+                                    break;
+                                case DRAWTYPE.fadeIn:
+                                    _areaInfos[i].subAreaInfos[j].position.y = -Mathf.Lerp(-0.2f, 1.2f * (lawnHeight/2f), Mathf.SmoothStep(0.2f,1f, normalizeDistance));
+                                    _areaInfos[i].subAreaInfos[j].cascadeValue = 1;
+                                    break;
+                                case DRAWTYPE.cascadeAndFade:
+                                    _areaInfos[i].subAreaInfos[j].cascadeValue = SelectCascadeMesh(normalizeDistance);
+                                    float heightMultiplier = Mathf.Max(0.2f, _areaInfos[i].cascadeValue/(float)(_cascadeMesh.Length-1));
+                                    _areaInfos[i].subAreaInfos[j].position.y = Mathf.Lerp(0f, -0.2f, Mathf.SmoothStep(0.0f,0.3f, normalizeDistance));
 
-                                break;
+                                    break;
+                            }
+                            _areaInfos[i].subAreaInfos[j].trs.SetTRS(_areaInfos[i].subAreaInfos[j].position, Quaternion.identity, Vector3.one);
+                        } 
                     }
-    
-                    _areaInfos[i].trs.SetTRS(_areaInfos[i].position, Quaternion.identity, Vector3.one);
-                }
-                else
-                {
-                    _areaInfos[i].visible = false;
-                }
+                    else
+                    {
+                        _areaInfos[i].subAreaInfos[j].visible = false;
+                    }
+                } 
             }
             else
             {
@@ -197,9 +220,15 @@ public class LawArea : MonoBehaviour
         {
             if (_areaInfos[i].visible)
             {
-                int value = _areaInfos[i].cascadeValue -1;
-                _cascadeMeshList[value].mesh = _cascadeMesh[(value)];
-                _cascadeMeshList[value].positionList.Add(_areaInfos[i].trs);
+                for (int j = 0; j < _areaInfos[i].subAreaInfos.Length; j++)
+                {
+                    if (_areaInfos[i].subAreaInfos[j].visible)
+                    {
+                        int value = _areaInfos[i].subAreaInfos[j].cascadeValue -1;
+                        _cascadeMeshList[value].mesh = _cascadeMesh[(value)];
+                        _cascadeMeshList[value].positionList.Add(_areaInfos[i].subAreaInfos[j].trs);
+                    }
+                }
             }
         }
 
@@ -244,8 +273,9 @@ public class LawArea : MonoBehaviour
         _lawnLayer = LayerMask.NameToLayer("Lawn");
         _block = new MaterialPropertyBlock();
         
-        CreateAreaArrayInfo();
-
+        //Create Field Area
+        CreateAreaArrayInfo(ref _areaInfos, widthDivision, depthDivition, lawnDepth, lawnWidth, field.transform.position);
+       
         _cascadeMesh[0] = CreateLawnArea(lawnAmount);
         _cascadeMesh[1] = CreateLawnAreaLod(_cascadeMesh[0], _cascade1multiplier, 1);
         _cascadeMesh[2] = CreateLawnAreaLod(_cascadeMesh[0], _cascade2multiplier, 1);
@@ -317,61 +347,6 @@ public class LawArea : MonoBehaviour
         Array.Resize(ref vertexColor, reduce);
         mesh.colors = vertexColor;
         return mesh;
-
-        /*
-        //Vertices
-        Vector3[] vertices = new Vector3[reduce];
-        for (int i = 0; i < vertices.Length; i++)
-        {
-            Vector3 vertexPosition = lawMesh.vertices[i];
-            vertexPosition.y *= heightMultiplier;
-            
-            //Set
-            vertices[i].x = vertexPosition.x;
-            vertices[i].y = vertexPosition.y;
-            vertices[i].z = vertexPosition.z;
-        }
-
-        mesh.vertices = vertices;
-        
-        //Triangles
-        int[] triangles = new int[(reduce * 3) / 2 ];
-        for (int i = 0; i < triangles.Length; i++)
-        {
-            triangles[i] = lawMesh.triangles[i];
-        }
-
-        mesh.triangles = triangles;
-        
-        //UVs
-        Vector2[] uvs = new Vector2[reduce];
-        for (int i = 0; i < uvs.Length; i++)
-        {
-            uvs[i] = lawMesh.uv[i];
-        }
-
-        mesh.uv = uvs;
-        
-        //Normal
-        Vector3[] normals = new Vector3[reduce];
-        for (int i = 0; i < normals.Length; i++)
-        {
-            normals[i] = Vector3.up;
-        }
-
-        mesh.normals = normals;
-        
-        //Color
-        Color[] vertexColor = new Color[reduce];
-        for (int i = 0; i < vertexColor.Length; i++)
-        {
-            vertexColor[i] = lawMesh.colors[i];
-        }
-
-        mesh.colors = vertexColor;
-        
-        return mesh;
-        */
     }
     
     private Mesh CreateLawnArea(int totalAmount)
@@ -394,6 +369,8 @@ public class LawArea : MonoBehaviour
         float randonZPosision = 0;
         float width = lawnWidth / (float) depthDivition;
         float depth = lawnDepth / (float) widthDivision;
+        width /= subDivision;
+        depth /= subDivision;
        
         //Rotation
         float rotYRandom = Random.Range(-90f, 90f);
@@ -512,27 +489,27 @@ public class LawArea : MonoBehaviour
         return mesh;
     }
 
-    private void CreateAreaArrayInfo()
+    private void CreateAreaArrayInfo(ref AreaInfo[] areaInfos, int areaWidthDivision, int areaDepthDivision, float depth, float width, Vector3 areaPos)
     {       
-        _areaInfos = new AreaInfo[widthDivision * depthDivition];
+        areaInfos = new AreaInfo[areaWidthDivision * areaDepthDivision];
         
-        float scaleX = lawnDepth / (float) widthDivision;
-        float scaleZ = lawnWidth / (float) depthDivition;
+        float scaleX = depth / (float) areaWidthDivision;
+        float scaleZ = width / (float) areaDepthDivision;
         Vector3 scaleXYZ = new Vector3(scaleZ, 1, scaleX);
         
-        float posX = field.transform.position.x + lawnWidth/2f;
+        float posX = areaPos.x + width/2f;
         posX -= scaleZ / 2f;
         float posY = 0;
-        float posZ = field.transform.position.z + lawnDepth/2f;
+        float posZ = areaPos.z + depth/2f;
         posZ -= scaleX / 2f;
         
         Vector3 initPos = new Vector3(posX, 0, posZ);
         
         int index = -1;
         int indexPosX = 0;
-        for (int i = 0; i < depthDivition * widthDivision; i++)
+        for (int i = 0; i < areaInfos.Length; i++)
         {
-            if (i % depthDivition == 0)
+            if (i % areaDepthDivision == 0)
             {
                 indexPosX = 0;
                 index++;
@@ -544,11 +521,57 @@ public class LawArea : MonoBehaviour
 
             indexPosX++;
 
-            _areaInfos[i].position = pos;
-            _areaInfos[i].visible = false;
-            _areaInfos[i].scale = scaleXYZ;
-            _areaInfos[i].dotValue = 0;
-            _areaInfos[i].trs = Matrix4x4.identity;
+            areaInfos[i].position = pos;
+            areaInfos[i].visible = false;
+            areaInfos[i].scale = scaleXYZ;
+            areaInfos[i].dotValue = 0;
+            areaInfos[i].trs = Matrix4x4.identity;
+            areaInfos[i].subAreaInfos = new SubAreaInfo[subDivision*subDivision];
+
+            for (int j = 0; j < areaInfos[i].subAreaInfos.Length; j++)
+            {
+                CreateSubAreaArrayInfo(ref areaInfos[i].subAreaInfos, subDivision, subDivision, areaInfos[i].scale.x, areaInfos[i].scale.z, areaInfos[i].position);
+            }
+        }
+    }
+
+    private void CreateSubAreaArrayInfo(ref SubAreaInfo[] areaInfos, int areaWidthDivision, int areaDepthDivision, float depth, float width, Vector3 areaPos)
+    {
+        areaInfos = new SubAreaInfo[areaWidthDivision * areaDepthDivision];
+        
+        float scaleX = width / (float) areaWidthDivision;
+        float scaleZ = depth / (float) areaDepthDivision;
+        Vector3 scaleXYZ = new Vector3(scaleZ, 1, scaleX);
+        
+        float posX = areaPos.x + depth/2f;
+        posX -= scaleZ / 2f;
+        float posY = 0;
+        float posZ = areaPos.z + width/2f;
+        posZ -= scaleX / 2f;
+        
+        Vector3 initPos = new Vector3(posX, 0, posZ);
+        
+        int index = -1;
+        int indexPosX = 0;
+        for (int i = 0; i < areaInfos.Length; i++)
+        {
+            if (i % areaDepthDivision == 0)
+            {
+                indexPosX = 0;
+                index++;
+            }
+            
+            Vector3 pos = initPos;
+            pos.x = pos.x - (scaleZ * indexPosX);
+            pos.z = pos.z - (scaleX * index);
+
+            indexPosX++;
+
+            areaInfos[i].position = pos;
+            areaInfos[i].visible = false;
+            areaInfos[i].scale = scaleXYZ;
+            areaInfos[i].dotValue = 0;
+            areaInfos[i].trs = Matrix4x4.identity;
         }
     }
     
@@ -571,7 +594,7 @@ public class LawArea : MonoBehaviour
         if (!showDebug)
             return;
         
-        Gizmos.color = Color.yellow;
+        Gizmos.color = Color.white;
         
         for (int i = 0; i < depthDivition; i++)
         {
@@ -614,31 +637,39 @@ public class LawArea : MonoBehaviour
         {
             if (_areaInfos[i].visible)
             {
-                //Handles.Label(_areaInfos[i].position, _areaInfos[i].dotValue.ToString());
-                Handles.Label(_areaInfos[i].position, _areaInfos[i].cascadeValue.ToString());
                 Gizmos.color = Color.green;
-                switch (_areaInfos[i].cascadeValue)
+                Gizmos.DrawWireCube(_areaInfos[i].position, _areaInfos[i].scale);
+                
+                //SubDivision
+                for (int j = 0; j < _areaInfos[i].subAreaInfos.Length; j++)
                 {
-                    case 1:
-                        visibleAmount1++;
-                        break;
-                    case 2:
-                        visibleAmount2++;
-                        break;
-                    case 3:
-                        visibleAmount3++;
-                        break;
-                    case 4:
-                        visibleAmount4++;
-                        break;
+                    if (_areaInfos[i].subAreaInfos[j].visible)
+                    {
+                        switch (_areaInfos[i].subAreaInfos[j].cascadeValue)
+                        {
+                            case 1:
+                                Gizmos.color = Color.green;
+                                visibleAmount1++;
+                                break;
+                            case 2:
+                                Gizmos.color = Color.blue;
+                                visibleAmount2++;
+                                break;
+                            case 3:
+                                Gizmos.color = Color.yellow;
+                                visibleAmount3++;
+                                break;
+                            case 4:
+                                Gizmos.color = Color.red;
+                                visibleAmount4++;
+                                break;
+                        }
+                    
+                        Handles.Label(_areaInfos[i].subAreaInfos[j].position, _areaInfos[i].subAreaInfos[j].cascadeValue.ToString());
+                        Gizmos.DrawWireCube(_areaInfos[i].subAreaInfos[j].position, _areaInfos[i].subAreaInfos[j].scale); 
+                    }
                 }
             }
-            else
-            {
-                Gizmos.color = Color.red;
-            }
-            
-            Gizmos.DrawWireCube(_areaInfos[i].position, _areaInfos[i].scale);
         }
 
         float memoryCascade = visibleAmount1 * GetMeshMemorySizeMB(_cascadeMesh[0]);
