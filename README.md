@@ -9,6 +9,8 @@ It can be optmize for 1MS using native resolution.
 
 Only 1 Draw call.
 
+### Add Burst, Unity Jobs and Cell optimization
+
 ![lawn](https://github.com/resetme/LawnShaderMobile/blob/main/GitFiles/Lawn1.png)
 
 
