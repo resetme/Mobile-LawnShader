@@ -1,10 +1,10 @@
 # LawnShaderMobile - UPDATE ONLY ASSET STORE
 
-##Lawn for Mobile 
+## Lawn for Mobile 
 
 ![Image](https://github.com/resetme/Mobile-LawnShader/blob/main/GitFiles/Grass.png)
 
-##Automatic Cube Shadow
+## Automatic Cube Shadow
 
 ![Image](https://github.com/resetme/Mobile-LawnShader/blob/main/GitFiles/Shadow.gif)
 
