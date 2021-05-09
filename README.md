@@ -1,4 +1,6 @@
 # LawnShaderMobile - UPDATE ONLY ASSET STORE
+
+
 Shader for Mobile OpenGL3
 
 Fast Lawn Shader for Mobile.
@@ -7,7 +9,10 @@ Memory is about 8 Mb for 300k.
 
 It can be optmize for 1MS using native resolution.
 
-### New UPDATE
+### UPDATE
+- Add Damage system
+
+### UPDATE
 - Only 1 Draw call.
 - Only 1 Draw call even with large maps (Well, limit is imagination)
 - No PopUP mesh
