@@ -1,6 +1,6 @@
 # LawnShaderMobile 
 
-!This GIT does **NOT** contain all files from AssetStore, just a sample Preview files.
+!This GIT does **NOT** contain all files from AssetStore, just sample Preview files.
 
 ## Lawn for Mobile 
 
