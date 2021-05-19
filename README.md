@@ -1,5 +1,7 @@
 # LawnShaderMobile - UPDATE ONLY ASSET STORE
 
+!This GIT does **NOT** contain all files from AssetStore, just a sample Preview files.
+
 ## Lawn for Mobile 
 
 ![Image](https://github.com/resetme/Mobile-LawnShader/blob/main/GitFiles/Grass.png)
