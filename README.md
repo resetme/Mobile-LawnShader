@@ -1,4 +1,4 @@
-# LawnShaderMobile - UPDATE ONLY ASSET STORE
+# LawnShaderMobile 
 
 !This GIT does **NOT** contain all files from AssetStore, just a sample Preview files.
 
