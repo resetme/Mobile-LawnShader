@@ -9,10 +9,13 @@ using UnityEngine.Profiling;
 using UnityEditor;
 #endif
 
+//OLD VERSION NO MESH API AND UNITY JOBS
+
 [ExecuteInEditMode]
 public class LawArea : MonoBehaviour
 {
     public bool showDebug = false;
+    public bool updateMesh = false;
     
     public GameObject field;
     public Transform observerPosition;
@@ -64,9 +67,52 @@ public class LawArea : MonoBehaviour
 
     public DRAWTYPE drawType;
 
+    [Header("Cube Shadow")]
+    public Texture shadowMap;
+    public Vector4 cubeMapUv;
+    [Range(0.0f,1.0f)]
+    public float shadowIntensity;
+    
+    [Header("Cloud Shadow")]
+    public Texture cloudMap;
+    public Vector4 cloudUV1;
+    public Vector4 cloudUV2;
+    [Range(0.0f,1.0f)]
+    public float cloudIntensity1;
+   
+    [Range(0.0f,1.0f)]
+    public float cloudIntensity2;
+
+    [Header("Snow Texture")] 
+    public Texture snowShadow;
+    
+    [Header("Top Color")] 
+    [ColorUsageAttribute(true,true,0f,8f,0.125f,3f)]public Color topColor;
+    [Range(-1.0f,1.0f)]
+    public float topColorLevel;
+
     private int _shader_MainTex = Shader.PropertyToID("_MainTex");
     private int _shader_MainIntensity = Shader.PropertyToID("_MainIntensity");
     private int _shader_ColorGround = Shader.PropertyToID("_ColorGround");
+    
+    //Cube Shadow
+    private int _shader_CubeShadow = Shader.PropertyToID("_CubeShadow");
+    private int _shader_CubeMapUV = Shader.PropertyToID("_CubeMapUV");
+    private int _shader_CubeShadowIntensity = Shader.PropertyToID("_CubeShadowIntensity");
+    
+    //Cloud Shadow
+    private int _shader_CloudShadow = Shader.PropertyToID("_CloudShadow");
+    private int _shader_CloudShadowUV1 = Shader.PropertyToID("_CloudShadowUV1");
+    private int _shader_CloudShadowIntensity1 = Shader.PropertyToID("_CloudShadowIntensity1");
+    private int _shader_CloudShadowUV2 = Shader.PropertyToID("_CloudShadowUV2");
+    private int _shader_CloudShadowIntensity2 = Shader.PropertyToID("_CloudShadowIntensity2");
+    
+    //Top Color
+    private int _shader_TopColor = Shader.PropertyToID("_TopColor");
+    private int _shader_TopColorLevel = Shader.PropertyToID("_TopColorLevel");
+    
+    //Snow
+    private int _shader_SnowShadow = Shader.PropertyToID("_SnowShadow");
 
     public enum DRAWTYPE
     {
@@ -77,10 +123,7 @@ public class LawArea : MonoBehaviour
     {
         public Vector3 position;
         public Vector3 scale;
-        public float dotValue;
         public bool visible;
-        public Matrix4x4 trs;
-        public int cascadeValue;
         public SubAreaInfo[] subAreaInfos;
     }
 
@@ -100,7 +143,6 @@ public class LawArea : MonoBehaviour
         public Mesh mesh;
         public List<Matrix4x4> positionList; 
     }
-    
 
     private bool _initialize = false;
     private Mesh _createdMesh;
@@ -140,8 +182,6 @@ public class LawArea : MonoBehaviour
                     distance = Vector3.Distance(targetObserverPosition, _areaInfos[i].subAreaInfos[j].position);
                     if (distance < viewDistance)
                     {
-                        _areaInfos[i].subAreaInfos[j].visible = true;
-                        
                         Vector3 up = (_areaInfos[i].subAreaInfos[j].position - targetObserverPosition).normalized;
                         Vector3 forward = transform.TransformDirection(observerPosition.transform.forward);
                         float dot = Vector3.Dot(forward, up);
@@ -151,6 +191,8 @@ public class LawArea : MonoBehaviour
                     
                         if (dot > minAngle && dot < maxAngle)
                         {
+                            _areaInfos[i].subAreaInfos[j].visible = true;
+                            
                             float normalizeDistance = distance / viewDistance;
                     
                             switch (drawType)
@@ -164,13 +206,17 @@ public class LawArea : MonoBehaviour
                                     break;
                                 case DRAWTYPE.cascadeAndFade:
                                     _areaInfos[i].subAreaInfos[j].cascadeValue = SelectCascadeMesh(normalizeDistance);
-                                    float heightMultiplier = Mathf.Max(0.2f, _areaInfos[i].cascadeValue/(float)(_cascadeMesh.Length-1));
-                                    _areaInfos[i].subAreaInfos[j].position.y = Mathf.Lerp(0f, -0.2f, Mathf.SmoothStep(0.0f,0.3f, normalizeDistance));
+                                    float heightMultiplier = Mathf.Max(0.2f, _areaInfos[i].subAreaInfos[j].cascadeValue/(float)(_cascadeMesh.Length-1));
+                                    _areaInfos[i].subAreaInfos[j].position.y = -Mathf.Lerp(-0.2f, 1.2f * (lawnHeight/2f), Mathf.SmoothStep(0.2f,1f, normalizeDistance));
 
                                     break;
                             }
                             _areaInfos[i].subAreaInfos[j].trs.SetTRS(_areaInfos[i].subAreaInfos[j].position, Quaternion.identity, Vector3.one);
-                        } 
+                        }
+                        else
+                        {
+                            _areaInfos[i].subAreaInfos[j].visible = false;
+                        }
                     }
                     else
                     {
@@ -204,8 +250,28 @@ public class LawArea : MonoBehaviour
         _fieldMaterial.SetFloat(_shader_MainIntensity, lawnIntensity);
         _fieldMaterial.SetColor(_shader_ColorGround, lawnColorGround);
 
+        //Cube Shadow
+        Shader.SetGlobalVector(_shader_CubeMapUV, cubeMapUv);
+        Shader.SetGlobalTexture(_shader_CubeShadow, shadowMap);
+        Shader.SetGlobalFloat(_shader_CubeShadowIntensity, shadowIntensity);
+        
+        //Cloud Shadow
+        Shader.SetGlobalTexture(_shader_CloudShadow, cloudMap);
+        Shader.SetGlobalVector(_shader_CloudShadowUV1, cloudUV1);
+        Shader.SetGlobalFloat(_shader_CloudShadowIntensity1, cloudIntensity1);
+        Shader.SetGlobalVector(_shader_CloudShadowUV2, cloudUV2);
+        Shader.SetGlobalFloat(_shader_CloudShadowIntensity2, cloudIntensity2);
+        
+        //Top Color
+        Shader.SetGlobalVector(_shader_TopColor, topColor);
+        Shader.SetGlobalFloat(_shader_TopColorLevel, topColorLevel);
+        
+        //Snow
+        Shader.SetGlobalTexture(_shader_SnowShadow, snowShadow);
+
         material.mainTextureOffset = _fieldMaterial.mainTextureOffset;
         material.mainTextureScale = _fieldMaterial.mainTextureScale;
+        
 
     }
 
@@ -272,31 +338,18 @@ public class LawArea : MonoBehaviour
 
         _lawnLayer = LayerMask.NameToLayer("Lawn");
         _block = new MaterialPropertyBlock();
-        
-        //Create Field Area
-        CreateAreaArrayInfo(ref _areaInfos, widthDivision, depthDivition, lawnDepth, lawnWidth, field.transform.position);
-       
-        _cascadeMesh[0] = CreateLawnArea(lawnAmount);
-        _cascadeMesh[1] = CreateLawnAreaLod(_cascadeMesh[0], _cascade1multiplier, 1);
-        _cascadeMesh[2] = CreateLawnAreaLod(_cascadeMesh[0], _cascade2multiplier, 1);
-        _cascadeMesh[3] = CreateLawnAreaLod(_cascadeMesh[0], _cascade3multiplier, 1);
-        
-        /*
-        for (int i = 1; i < _cascadeMesh.Length; i++)
+
+        if (updateMesh)
         {
-            //Amount
-            float multiplier = (i) /(float)(_cascadeMesh.Length);
-            multiplier = 1 - multiplier;
-            
-            //height
-            float heightMultiplier = Mathf.Max(0.2f, i/(float)(_cascadeMesh.Length));
-            heightMultiplier = 1 - heightMultiplier;
-            heightMultiplier = 1;
-            _cascadeMesh[i] = CreateLawnAreaLod(_cascadeMesh[0], multiplier, heightMultiplier);
-        }
-        */
-        
+            //Create Field Area
+            CreateAreaArrayInfo(ref _areaInfos, widthDivision, depthDivition, lawnWidth, lawnDepth, field.transform.position);
        
+            _cascadeMesh[0] = CreateLawnArea(lawnAmount);
+            _cascadeMesh[1] = CreateLawnAreaLod(_cascadeMesh[0], _cascade1multiplier, 1);
+            _cascadeMesh[2] = CreateLawnAreaLod(_cascadeMesh[0], _cascade2multiplier, 1);
+            _cascadeMesh[3] = CreateLawnAreaLod(_cascadeMesh[0], _cascade3multiplier, 1);  
+        }
+
         ShaderUpdateProperties();
     }
 
@@ -332,16 +385,18 @@ public class LawArea : MonoBehaviour
         mesh.vertices = vertices;
         
         int[] triangles = lawMesh.triangles;
-        Array.Resize(ref triangles, (reduce * 3) / 2 );
+        Array.Resize(ref triangles, reduce); //(reduce * 3) / 2 
         mesh.triangles = triangles;
 
         Vector2[] uvs = lawMesh.uv;
         Array.Resize(ref uvs, reduce);
         mesh.uv = uvs;
         
+        /*
         Vector3[] normals = lawMesh.normals;
         Array.Resize(ref normals, reduce);
         mesh.normals = normals;
+        */
         
         Color[] vertexColor = lawMesh.colors;
         Array.Resize(ref vertexColor, reduce);
@@ -455,24 +510,38 @@ public class LawArea : MonoBehaviour
         mesh.uv = uvs;
 
         //Normals
+        /*
         Vector3[] normals = new Vector3[baseMesh.vertices.Length * amount];
+        Vector3[] baseNormals = baseMesh.normals;
+        int baseNormalsIndex = 0;
         for (int i = 0; i < normals.Length; i++)
         {
-            normals[i] = Vector3.up;
+            normals[i] = baseNormals[baseNormalsIndex];
+
+            baseNormalsIndex++;
+
+            if (baseNormalsIndex % baseMesh.vertices.Length == 0)
+            {
+                baseNormalsIndex = 0;
+            }
         }
 
         mesh.normals = normals;
+        */
         
         //Vertex Color
         float redRandom = Random.Range(0.5f, 1f);
+        float greenGrad;
+        float blueRandom = Random.Range(0f, 1f);
 
         Color[] vertexColor = new Color[baseMesh.vertexCount * amount];
+        Color[] baseColor = baseMesh.colors;
         int baseVertexColorIndex = 0;
         for (int i = 0; i < vertexColor.Length; i++)
         {
             vertexColor[i].r = redRandom;
-            vertexColor[i].g = 1;
-            vertexColor[i].b = 1;
+            vertexColor[i].g = baseColor[baseVertexColorIndex].g;
+            vertexColor[i].b = blueRandom;
             vertexColor[i].a = 1;
 
             baseVertexColorIndex++;
@@ -480,6 +549,7 @@ public class LawArea : MonoBehaviour
             if (baseVertexColorIndex % baseMesh.vertexCount == 0)
             {
                 redRandom = Random.Range(0.5f, 1f);
+                blueRandom = Random.Range(0f, 1f);
                 baseVertexColorIndex = 0;
             }
         }
@@ -493,17 +563,8 @@ public class LawArea : MonoBehaviour
     {       
         areaInfos = new AreaInfo[areaWidthDivision * areaDepthDivision];
         
-        float scaleX = depth / (float) areaWidthDivision;
-        float scaleZ = width / (float) areaDepthDivision;
-        Vector3 scaleXYZ = new Vector3(scaleZ, 1, scaleX);
-        
-        float posX = areaPos.x + width/2f;
-        posX -= scaleZ / 2f;
-        float posY = 0;
-        float posZ = areaPos.z + depth/2f;
-        posZ -= scaleX / 2f;
-        
-        Vector3 initPos = new Vector3(posX, 0, posZ);
+        Vector3 initPos;
+        var scaleXYZ = ScaleXyz(areaWidthDivision, areaDepthDivision, depth, width, areaPos, out initPos);
         
         int index = -1;
         int indexPosX = 0;
@@ -516,16 +577,14 @@ public class LawArea : MonoBehaviour
             }
             
             Vector3 pos = initPos;
-            pos.x = pos.x - (scaleZ * indexPosX);
-            pos.z = pos.z - (scaleX * index);
+            pos.x = pos.x - (scaleXYZ.x * indexPosX);
+            pos.z = pos.z - (scaleXYZ.z * index);
 
             indexPosX++;
 
             areaInfos[i].position = pos;
             areaInfos[i].visible = false;
             areaInfos[i].scale = scaleXYZ;
-            areaInfos[i].dotValue = 0;
-            areaInfos[i].trs = Matrix4x4.identity;
             areaInfos[i].subAreaInfos = new SubAreaInfo[subDivision*subDivision];
 
             for (int j = 0; j < areaInfos[i].subAreaInfos.Length; j++)
@@ -538,19 +597,11 @@ public class LawArea : MonoBehaviour
     private void CreateSubAreaArrayInfo(ref SubAreaInfo[] areaInfos, int areaWidthDivision, int areaDepthDivision, float depth, float width, Vector3 areaPos)
     {
         areaInfos = new SubAreaInfo[areaWidthDivision * areaDepthDivision];
-        
-        float scaleX = width / (float) areaWidthDivision;
-        float scaleZ = depth / (float) areaDepthDivision;
-        Vector3 scaleXYZ = new Vector3(scaleZ, 1, scaleX);
-        
-        float posX = areaPos.x + depth/2f;
-        posX -= scaleZ / 2f;
-        float posY = 0;
-        float posZ = areaPos.z + width/2f;
-        posZ -= scaleX / 2f;
-        
-        Vector3 initPos = new Vector3(posX, 0, posZ);
-        
+
+        Vector3 initPos;
+        var scaleXYZ = ScaleXyz(areaWidthDivision, areaDepthDivision, depth, width, areaPos, out initPos);
+
+
         int index = -1;
         int indexPosX = 0;
         for (int i = 0; i < areaInfos.Length; i++)
@@ -562,8 +613,8 @@ public class LawArea : MonoBehaviour
             }
             
             Vector3 pos = initPos;
-            pos.x = pos.x - (scaleZ * indexPosX);
-            pos.z = pos.z - (scaleX * index);
+            pos.x = pos.x - (scaleXYZ.x * indexPosX);
+            pos.z = pos.z - (scaleXYZ.z * index);
 
             indexPosX++;
 
@@ -574,16 +625,33 @@ public class LawArea : MonoBehaviour
             areaInfos[i].trs = Matrix4x4.identity;
         }
     }
-    
+
+    private Vector3 ScaleXyz(int areaWidthDivision, int areaDepthDivision, float depth, float width, Vector3 areaPos,
+        out Vector3 initPos)
+    {
+        float scaleX = width / (float) areaWidthDivision;
+        float scaleZ = depth / (float) areaDepthDivision;
+        Vector3 scaleXYZ = new Vector3(scaleZ, 1, scaleX);
+
+        float posX = areaPos.x + depth / 2f;
+        posX -= scaleZ / 2f;
+        float posY = 0;
+        float posZ = areaPos.z + width / 2f;
+        posZ -= scaleX / 2f;
+
+        initPos = new Vector3(posX, 0, posZ);
+        return scaleXYZ;
+    }
+
 #if UNITY_EDITOR
     float GetMeshMemorySizeMB(Mesh mesh)
     {
-        return (Profiler.GetRuntimeMemorySizeLong(mesh) / 1024f) / 1024f;
+        return (UnityEngine.Profiling.Profiler.GetRuntimeMemorySizeLong(mesh) / 1024f) / 1024f;
     }
     
     private void OnValidate()
     {
-        InitialSetup();
+            InitialSetup();
     }
 
     private void OnDrawGizmos()
